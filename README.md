@@ -1,9 +1,8 @@
+> [!CAUTION]
+> This guide WILL be getting revamped very soon to run off a simple Docker Desktop deployment method, which will DRASTICALLY downsize this guide and allow us to immediately get into DFIR simulations! See documentation [here](https://www.elastic.co/docs/deploy-manage/deploy/self-managed/local-development-installation-quickstart).
+
 # Elastic-SIEM-Setup
 A guide for building your own SIEM using the Elasticsearch, Beats, and Kibana, and how to simulate, analyze and triage attacks for a homelab. Courtesy of the internet and other sources.
-
-# Preface And Shoutouts
-> [!CAUTION]
-> Since my thinkpad (running this project) died on me, I've been trying to get everything going on my desktop PC. I am at the Elastic agent enrollment phase but am facing a lot of trouble and issues. I'm uncertain why; I probably missed some configuration step and thus messed up certificates or something of the like. I leave it to my friends to try this project for themselves because I personally won't bang my head against the wall trying to diagnose random `Security Exception` error messages that I have never seen before. If you do find issues or fixes with this project, please DM me on Discord @ nubbieeee.
 
 > [!IMPORTANT]
 > You can use VMware to set up this entire lab. I would actually recommend it if you have access to the software since VirtualBox Shared Clipboard doesn't work even with Guest Additions installed, from my experience at least. Your next best option is using SSH so you can copy commands from your host "onto" the VM.
