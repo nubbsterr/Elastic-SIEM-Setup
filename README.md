@@ -143,6 +143,7 @@ Make sure to silence Cortana because she's mad annoying and nobody likes her. **
 
 **As a bonus, you may debloat Windows to save some system resources and have an overall more minimal system. I recommend using [Raphire's Win11Debloat](https://github.com/Raphire/Win11Debloat).**
 
+**Additionally, make sure to remove the ISO attachment from your SATA drive on your VM by going into your Storage Settings, selecting the ISO you used, and clicking Remove Attachment. You can only do this once the VM is powered off!**
 
 Download Winlogbeat on the Windows VM by going to [this link](https://www.elastic.co/downloads/beats/winlogbeat) and downloading the Windows ZIP file. Unzip the file to `C:\Program Files\Winlogbeat` (by creating a new folder in `C:\Program Files` whilst unzipping). Once complete, open a PowerShell session as Administrator and `cd` into `C:\Program Files\Winlogbeat\<unzipped folder name>`, then run:
 
@@ -154,17 +155,6 @@ Set-ExecutionPolicy bypass
 Edit the `winlogbeat.yml` config file (in the same current working directory) **as Administrator** in Notepad as follows:
 
 ```
-# ignore_older 72h will prevent collecting logs from 72h ago; lessen the burden on elasticsearch lol
-winlogbeat.event_logs:
-  - name: Application
-    ignore_older: 72h
-  - name: System
-    ignore_older: 72h
-  - name: Security
-    ignore_older: 72h
-  - name: Microsoft-Windows-PowerShell/Operational
-    ignore_older: 72h
-
 output.elasticsearch:
   hosts: ["<server-vm-ip>:9200"]
 
@@ -176,15 +166,17 @@ We're now at the point where we need to create a NAT network for our VMs, so the
 
 To get the server IP, start up the server VM and run `ip addr` to get the server IP on the NAT network. This will be very handy for us in the following steps.
 
-Now, go ahead and start up the service!
+We won't be enabling any modules for Winlogbeat, so we can go ahead and start up the service.
 
 ```powershell
-.\winlogbeat.exe setup --dashboards (load prebuild SIEM dashboards! Access in Analytics --> Dashboards through the sidebar!)
+.\winlogbeat.exe setup --dashboards (load prebuild SIEM dashboards! Access in Analytics --> Dashboards through the sidebar! If the command fails, just rerun it and make sure you have your SIEM frontend open.)
 Start-Service winlogbeat
 Set-Service -Name winlogbeat -StartupType Automatic
 ```
 
 If all is good, we should be able to check our SIEM frontend and see our logs start flooding in!!
 
+**Give Winlogbeat some time to get going, since we're running a minimal amount of resources for this setup. Also, set your time range to be the last 15 hours or so, since Elasticsearch is not automatically set to local time as a timezone; you might have logs coming in but not showing because they aren't showing up in the time range!**
+
 # Testing the setup!
-start
+To be continued.
