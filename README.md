@@ -130,7 +130,7 @@ If no errors occured, we can access our Kibana UI at `localhost:5601` on our ser
 
 Give Kibana some time to setup and load the frontend. You should be able to log in automatically and access the SIEM frontend after a minute or two!
 
-# Creating our Windows VM and installing Winlogbeat to ship basic event logs 
+# Creating our Windows VM and installing Winlogbeat and Sysmon to ship basic event logs 
 We now need to make a Windows 10 VM. Go grab an ISO from Microsoft's website [here](https://www.microsoft.com/en-us/software-download/windows10ISO) and create a new VM with the exact same specs as we have for our server VM (maybe have 30-40GB of storage just cuz Windows is massive). 
 
 During this time, you can stop your server VM to save system resources if you wish.
@@ -166,17 +166,55 @@ We're now at the point where we need to create a NAT network for our VMs, so the
 
 To get the server IP, start up the server VM and run `ip addr` to get the server IP on the NAT network. This will be very handy for us in the following steps.
 
+The last thing for us to do before starting the Winlogbeat service is to install Sysmon, just so we can get more precise telemetry of our system. We can do so through the following steps:
+
+1) [Download Sysmon on the Windows VM](https://docs.microsoft.com/en-us/sysinternals/downloads/sysmon)
+2) Extract the ZIP archive, then open a PowerShell session as Administrator in the unzipped directory.
+3) Go to [this GitHub repo](https://github.com/SwiftOnSecurity/sysmon-config) and grab [this Sysmon configuration](https://github.com/SwiftOnSecurity/sysmon-config/blob/master/sysmonconfig-export.xml). Move this configuration file to the unzipped Sysmon directory (or modify the following command).
+4) Run `Sysmon64.exe -accepteula -i sysmonconfig-export.xml` to execute Sysmon with the config file!
+
+With that out of the way, we can continue on with setting up Winlogbeat.
+
 We won't be enabling any modules for Winlogbeat, so we can go ahead and start up the service.
 
 ```powershell
-.\winlogbeat.exe setup --dashboards (load prebuild SIEM dashboards! Access in Analytics --> Dashboards through the sidebar! If the command fails, just rerun it and make sure you have your SIEM frontend open.)
+.\winlogbeat.exe setup --dashboards 
 Start-Service winlogbeat
 Set-Service -Name winlogbeat -StartupType Automatic
 ```
 
+`setup --dashboards` will load some preconfigured Kibana dashboards, which will be very nice to look at on our frontend. You can check them out through the sidebar under Analytics and clicking on Dashboards.
+
 If all is good, we should be able to check our SIEM frontend and see our logs start flooding in!!
 
-**Give Winlogbeat some time to get going, since we're running a minimal amount of resources for this setup. Also, set your time range to be the last 15 hours or so, since Elasticsearch is not automatically set to local time as a timezone; you might have logs coming in but not showing because they aren't showing up in the time range!**
+**Give Winlogbeat some time to get going, since we're running a minimal amount of resources for this setup. Also, logs in Elasticsearch will show up in UTC time, so make sure to set your time range accordingly (15 hours back preferably)!**
+
+**Startup time overall can take a while and everything gets pretty slow given how low our spces are! If it takes a while to access Elastic, it is probably because of everything lagging behind and starting up on the server VM.**
 
 # Testing the setup!
+Now that our setup is up and running, let's have some fun with it! To do so, we're going to be using [Atomic Red Team](https://github.com/redcanaryco/atomic-red-team/wiki) to simulate some attacks on our Windows VM. Not only will this provide you with baskground on various attacks done on Windows, but also expose you to [MITRE ATT&CK](https://attack.mitre.org/) as well. You'll also be able to see how attacks look from the perspective of the Blue Team, and gain a solid understanding of how DFIR operates during/after an incident.
+
+For this guide, we will do 2 mock incidents. The first will be some [WMI User Reconnaissance (T1047)](https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1047/T1047.md#atomic-test-1---wmi-reconnaissance-users), and the second will be classic [LSASS Credential Dumping (T1003.001)](https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1003.001/T1003.001.md#atomic-test-2---dump-lsassexe-memory-using-comsvcsdll), but we'll be using `comsvcs.dll` to dump LSASS (Check out [LOLBAS](https://lolbas-project.github.io/lolbas/Libraries/comsvcs/) for more details).
+
+To get started, let's install Atomic Red Team onto our Windows VM with the below commands. **Make sure to disable Windows Defender as it will flag the Atomic Red Team files lol**:
+
+```powershell
+IEX (IWR 'https://raw.githubusercontent.com/redcanaryco/invoke-atomicredteam/master/install-atomicredteam.ps1' -UseBasicParsing);
+Install-AtomicRedTeam -getAtomics
+cd C:\AtomicRedTeam\atomics
+Import-Module .\Invoke-AtomicRedTeam.psd1
+```
+
+This will install the `Invoke-AtomicRedTeam` Execution Framework alongside all the tests we need. 
+
+# Mock Incident 1: WMI Reconnaissance
 To be continued.
+
+# Mock Incident 2: LSASS Dump
+To be continued.
+
+# Sources
+- [Elastic Docs for installing Elasticsearch](https://www.elastic.co/docs/deploy-manage/deploy/self-managed/install-elasticsearch-with-debian-package)
+- [Elastic Docs for installing Kibana](https://www.elastic.co/docs/deploy-manage/deploy/self-managed/install-kibana-with-debian-package)
+- [Elastic Docs for installing Winlogbeat](https://www.elastic.co/docs/reference/beats/winlogbeat/winlogbeat-installation-configuration)
+- [Atomic Red Team Docs (a lot to digest)](https://github.com/redcanaryco/atomic-red-team/wiki)
